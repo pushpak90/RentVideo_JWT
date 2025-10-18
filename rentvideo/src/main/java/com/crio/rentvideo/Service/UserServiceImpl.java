@@ -1,5 +1,7 @@
 package com.crio.rentvideo.Service;
 
+import java.util.Optional;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +26,12 @@ public class UserServiceImpl implements UserService {
         User user = modelMapper.map(registerRequest, User.class);
         User saved = userRepository.save(user);
         return modelMapper.map(saved, RegisterRequest.class);
+    }
+
+    @Override
+    public Optional<RegisterRequest> getUserByEmail(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.map(u -> modelMapper.map(u, RegisterRequest.class));
     }
 
 }

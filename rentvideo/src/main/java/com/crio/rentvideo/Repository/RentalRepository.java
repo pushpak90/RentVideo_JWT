@@ -6,5 +6,5 @@ import com.crio.rentvideo.Entity.Rental;
 
 public interface RentalRepository extends JpaRepository<Rental, Long>{
     long countByUserIdAndReturnAtIsNull(Long userId);
-
+    
 }

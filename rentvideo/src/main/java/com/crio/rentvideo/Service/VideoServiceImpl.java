@@ -32,4 +32,25 @@ public class VideoServiceImpl implements VideoService {
                 .map(v -> modelMapper.map(v, VideoDTO.class)).collect(Collectors.toList());
     }
 
+    @Override
+    public VideoDTO updateVideo(long id, VideoDTO videoDTO) {
+        Video video = videoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Video not found by ID : " + id));
+        video.setDirector(videoDTO.getDirector());
+        video.setGenre(videoDTO.getGenre());
+        video.setTitle(videoDTO.getTitle());
+
+        return modelMapper.map(videoRepository.save(video), VideoDTO.class);
+    }
+
+    @Override
+    public boolean deleteVideo(long id) {
+
+        if (videoRepository.existsById(id)) {
+            videoRepository.deleteById(id);
+            return true;
+        }
+
+        return false;
+    }
 }
