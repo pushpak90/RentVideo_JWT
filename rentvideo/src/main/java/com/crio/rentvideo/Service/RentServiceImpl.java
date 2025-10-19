@@ -1,6 +1,7 @@
 package com.crio.rentvideo.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import javax.naming.NameNotFoundException;
 
@@ -16,6 +17,8 @@ import com.crio.rentvideo.Repository.RentalRepository;
 import com.crio.rentvideo.Repository.UserRepository;
 import com.crio.rentvideo.Repository.VideoRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class RentServiceImpl implements RentService {
 
@@ -28,6 +31,7 @@ public class RentServiceImpl implements RentService {
     ModelMapper modelMapper = new ModelMapper();
 
     @Override
+    @Transactional
     public RentalDTO rentVideo(String email, long videoID) {
         try {
             User user = userRepository.findByEmail(email)
@@ -53,6 +57,37 @@ public class RentServiceImpl implements RentService {
         } catch (Exception exception) {
             return null;
         }
+    }
+
+    @Override
+    @Transactional
+    public RentalDTO returnVideo(String email, long videoId) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User Not Found By Email : " + email));
+
+        List<Rental> rentals = rentalRepository.findByUserIdAndVideoIdAndReturnAtIsNull(user.getId(), videoId);
+
+        if (rentals.isEmpty()) {
+            throw new RuntimeException("No active rental found for this user and video");
+        }
+        Rental rental = rentals.get(0);
+        rental.setReturnAt(LocalDateTime.now());
+
+        videoRepository.findById(videoId).ifPresent(v -> {
+            v.setAvailable(true);
+            videoRepository.save(v);
+        });
+
+        return modelMapper.map(rentalRepository.save(rental), RentalDTO.class);
+    }
+
+    @Override
+    public List<RentalDTO> getMyActiveRentals(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User Not Found"));
+        return rentalRepository.findByUserIdAndReturnAtIsNull(user.getId())
+        .stream()
+        .map(r -> modelMapper.map(r, RentalDTO.class)).toList();
     }
 
 }
